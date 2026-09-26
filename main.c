@@ -32,22 +32,25 @@ heap: vai ser aplicada as dados dinamicos, seu funcionamento vai ser quando for 
 levar a variavel B para o final do array da ram antes do peso de papel, mudar o endereço VI da B para onde ela esta agora, expandir A, se sobrar espaço
 entre A e C salvar o começo desse espaço no cache da heap entao assem que tiver uma variavel que cabe ali colocar ela la.
 
-
-
-
-
-
 Primeiros 2 bytes diz onde termina os endereços de objetos 
+
+*/
+
+/*
+
+Marquise 0.1 (Organização do bytecode)
+
+000001 00 → comando 1, inteiro
+000001 01 → comando 1, decimal
+000001 10 → comando 1, string
+000001 11 → comando 1, boolean
 
 
 */
 
 // Inicializa a ROM (em breva a vm vai executar arquivos externos)
 #define tamanho 65536
-uint8_t ROM[tamanho] = 
-            {0, 56, 76, 
-            1, 1, 
-            2, 1};
+uint8_t ROM[tamanho] = {0b00000010, 2, 56, 76};
 uint64_t ROMP = 0;
 
 // Inicializa a RAM
@@ -64,7 +67,7 @@ uint8_t op() {
     return opcode;
 }
 
-
+/*
 
 void push() {
     for () {
@@ -78,12 +81,20 @@ void pull(uint64_t posV) {
 
 
 }
-
+*/
 void VM() {
-    uint8_t opcode = op();
-    switch (opcode) {
+    uint8_t opcode = op(); // instruçao de 8 bits
+    uint8_t comando = opcode >> 2; // pega os primeiros 6 bits (coloca 2 bits zerados no começo)
+    uint8_t modificador = opcode & 0b00000011; // pega os ultimos 2 bits
+
+    switch (comando) {
         case 0:
-            printf("");
+            opcode = op(); // pega o tamanho
+            if (modificador == 2) {
+                for (uint16_t i = 0; i < opcode; i++) {
+                    printf("%c", op());
+                }
+            }
         break;
         case 1: // push var (manda a variavel pra ram)
             //push();
@@ -97,9 +108,9 @@ void VM() {
 
 int main()
 {
-    while (1==1) {
+    //while (1==1) {
         VM();
-    }
+    //}
 
     return 0;
 }
