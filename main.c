@@ -49,8 +49,8 @@ Marquise 0.1 (Organização do bytecode)
 */
 
 // Inicializa a ROM (em breva a vm vai executar arquivos externos)
-#define tamanho 65536
-uint8_t ROM[tamanho] = {0b00000010, 2, 56, 76};
+#define tamanho 5
+uint8_t ROM[tamanho] = {0b00000100, 2, 56, 76, 0b00000010};
 uint64_t ROMP = 0;
 
 // Inicializa a RAM
@@ -59,29 +59,71 @@ uint8_t RAM[alocacao];
 uint64_t RAMP = 0;
 
 #define Tstack 16
-uint8_t STACK[Tstack];
+uint64_t STACK[Tstack];
+uint8_t sp = 0;
+
+uint8_t rodando() {
+    if (ROMP == tamanho) {
+        return 0;
+    }
+    return 1;
+}
 
 uint8_t op() {
     uint8_t opcode = ROM[ROMP];
     ROMP += 1;
     return opcode;
 }
+/*
+void push(uint8_t QntdBdTamanho) {
+    // Essa variavel QntdBdTamanho diz quantos bytes o tamanho da variavel ocupa, tipo o tamanho de uma variavel pode ter 4Gigas de ram, por esses ( É O TAMANHO DO TAMANHO)
+    STACK[sp] = 0;
+    QntdBdTamanho += 1;
+    uint8_t b = 0;
+    for (uint8_t a = 0; a < QntdBdTamanho; a++) {
+        b++;
+    }
+    for (uint8_t i = 0; i < b; i++) {
+        STACK[sp] = (STACK[sp] << 8) | op();
+    }
+    sp++;
+}
+*/
+void push(uint8_t QntdBdTamanho) {
+
+    QntdBdTamanho += 1;
+
+    uint32_t tamanhof = 0;
+
+    // Lê o tamanho da variável
+    for (uint8_t i = 0; i < QntdBdTamanho; i++) {
+        tamanhof = (tamanhof << 8) | op();
+    }
+
+    // Lê os dados
+    STACK[sp] = 0;
+
+    for (uint32_t i = 0; i < tamanhof; i++) {
+        STACK[sp] = op();
+        sp++;
+    }
+}
 
 /*
 
-void push() {
-    for () {
 
-    }
-
-}
 
 void pull(uint64_t posV) {
     //pega os bytes da ram e transforma em numero e coloca na stack
 
 
 }
+void load() {
+
+}
+
 */
+
 void VM() {
     uint8_t opcode = op(); // instruçao de 8 bits
     uint8_t comando = opcode >> 2; // pega os primeiros 6 bits (coloca 2 bits zerados no começo)
@@ -89,28 +131,26 @@ void VM() {
 
     switch (comando) {
         case 0:
-            opcode = op(); // pega o tamanho
-            if (modificador == 2) {
-                for (uint16_t i = 0; i < opcode; i++) {
-                    printf("%c", op());
-                }
+            if (modificador == 2) { //string
+                printf("%c", STACK[--sp]);
             }
         break;
-        case 1: // push var (manda a variavel pra ram)
-            //push();
+        case 1: // push var (coloca na satck)
+            push(modificador);
         break;
-        case 2: // pull var (traz a variavel para vm)
-            //pull();
+        case 2: // load var (traz a variavel da ram para vm)tira ram
+            //load();
         break;
+        
     }
 }
 
 
 int main()
 {
-    //while (1==1) {
+    while (rodando() == 1) {
         VM();
-    //}
+    }
 
     return 0;
 }
