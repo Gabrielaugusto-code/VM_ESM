@@ -46,21 +46,28 @@ Marquise 0.1 (Organização do bytecode)
 000001 11 → comando 1, boolean
 
 
+Ah o codigo inteiro é pra estar em big edian os da esquerda valiossos e da direita fracos
+
 */
 
 // Inicializa a ROM (em breva a vm vai executar arquivos externos)
 #define tamanho 5
-uint8_t ROM[tamanho] = {0b00000100, 2, 56, 76, 0b00000010};
+uint8_t ROM[tamanho] = {0b00000101, 56, 76, 0b00000010};
 uint64_t ROMP = 0;
 
 // Inicializa a RAM
 #define alocacao 65536
 uint8_t RAM[alocacao];
-uint64_t RAMP = 0;
+uint16_t RAMP = 0;
 
+// Corpo da RAM 
+uint16_t pointerVI = 0; // diz qual foi o ultimo conjunto colocado (diz onde estamos)
+
+// a satck vai trabalhar como se fosse registradores 
 #define Tstack 16
 uint64_t STACK[Tstack];
-uint8_t sp = 0;
+uint8_t Stag[Tstack]; // diz se o dado da sack é endereço para ram ou dado e outros metadados
+int8_t sp = 0; // ponteiro da stack
 
 uint8_t rodando() {
     if (ROMP == tamanho) {
@@ -74,45 +81,75 @@ uint8_t op() {
     ROMP += 1;
     return opcode;
 }
+
+void move(uint64_t pos) { // vai ir ate chegar em outra variavel
+
+
+}
+
+void store() {
+    sp--;
+    if (Stag[sp] == 1) {
+        uint64_t v = STACK[sp];              // cópia, a stack não é alterada
+
+        uint8_t n = 1;                       // passada 1: quantos bytes
+        for (uint64_t t = v >> 8; t != 0; t >>= 8) n++;
+
+        uint16_t enderecoAtual = pointerVI * 2;
+        RAM[enderecoAtual]     = RAMP >> 8;
+        RAM[enderecoAtual + 1] = RAMP & 0xFF;
+        pointerVI++;
+
+        for (uint8_t i = 0; i < n; i++) {    // passada 2: grava
+            RAM[RAMP + i] = (v >> ((n - 1 - i) * 8)) & 0xFF;
+        }
+        RAMP += n;
+    }
+}
 /*
-void push(uint8_t QntdBdTamanho) {
-    // Essa variavel QntdBdTamanho diz quantos bytes o tamanho da variavel ocupa, tipo o tamanho de uma variavel pode ter 4Gigas de ram, por esses ( É O TAMANHO DO TAMANHO)
-    STACK[sp] = 0;
-    QntdBdTamanho += 1;
-    uint8_t b = 0;
-    for (uint8_t a = 0; a < QntdBdTamanho; a++) {
-        b++;
+void store() {
+    uint16_t enderecoAtual = pointerVI * 2;
+    RAM[enderecoAtual] = RAMP >> 8;
+    enderecoAtual += 1;
+    RAM[enderecoAtual] = RAMP & 0xFF;
+    sp--;
+    if (Stag[sp] == 1) {
+        uint64_t v = STACK[sp];
+        uint8_t n = 1;
+        while ((v >>= 8) != 0) {
+            n++;
+        }
+        RAMP = RAMP + n;
+        v = STACK[sp];
+        for (uint8_t i = 0; i < n; i++) {
+            RAM[RAMP - i] = (v & 0xFF); // pega o byte menos valioso
+        }
     }
-    for (uint8_t i = 0; i < b; i++) {
-        STACK[sp] = (STACK[sp] << 8) | op();
-    }
-    sp++;
 }
 */
-void push(uint8_t QntdBdTamanho) {
+// so para strings e booleanos (booleanos clusters)
+void push_D(uint8_t QntdBdTamanho) { // coloca strings na stack virtual
 
-    QntdBdTamanho += 1;
 
-    uint32_t tamanhof = 0;
 
-    // Lê o tamanho da variável
-    for (uint8_t i = 0; i < QntdBdTamanho; i++) {
-        tamanhof = (tamanhof << 8) | op();
-    }
 
-    // Lê os dados
-    STACK[sp] = 0;
-
-    for (uint32_t i = 0; i < tamanhof; i++) {
-        STACK[sp] = op();
-        sp++;
-    }
 }
 
+// so pra inteiros, decimais, fica na stack de dados
+void push_F(uint8_t QntdBdTamanho) { // pega da rom e manda pra stack fisica
+    // QntdBdTamanho é o tamanho de bytes daa variavel, pode ser 00 = 1b, 01 = 2b, 10 = 4b, 11 = 8b
+    STACK[sp] = 0;
+    QntdBdTamanho = 1 << QntdBdTamanho; // ajusta o modificador 
+    for (uint8_t i = 0; i < QntdBdTamanho; i++) {
+        STACK[sp] = (STACK[sp] << 8) | op();
+    }
+    Stag[sp] = 1; // dado cru
+    sp++;
+}
+
+
+
 /*
-
-
-
 void pull(uint64_t posV) {
     //pega os bytes da ram e transforma em numero e coloca na stack
 
@@ -131,14 +168,20 @@ void VM() {
 
     switch (comando) {
         case 0:
-            if (modificador == 2) { //string
+            if (modificador == 0b00000010) { //string
                 printf("%c", STACK[--sp]);
             }
         break;
         case 1: // push var (coloca na satck)
-            push(modificador);
+            push_F(modificador); // fixo direto no registrador
         break;
-        case 2: // load var (traz a variavel da ram para vm)tira ram
+        case 2: // push
+            push_D(modificador); // dinamico direto na ram
+        break;
+        case 3: // store tira o dado da stack e manda pra ram 
+            store();
+        break;
+        case 4: // load var (traz a variavel da ram para vm)tira ram
             //load();
         break;
         
@@ -146,8 +189,8 @@ void VM() {
 }
 
 
-int main()
-{
+int main() {
+
     while (rodando() == 1) {
         VM();
     }
