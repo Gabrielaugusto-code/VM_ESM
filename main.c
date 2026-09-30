@@ -63,6 +63,15 @@ uint16_t RAMP = 0;
 // Corpo da RAM 
 uint16_t pointerVI = 0; // diz qual foi o ultimo conjunto colocado (diz onde estamos)
 #define UnitsRAM 2 // 2 bytes
+uint16_t primeiraVar = 0; 
+/*
+A variavel primeiraVar, é extremamente importante, ela vai dizer onde começa as variaveis,
+guardando o endereço no array da primeira variavel, entao quando os endereço VI foram creser
+nos vamos ver se tem essa variavel impedindo se tem nos levamos ela para o final da ram, atualizamos
+o endereço VI dessa variavel, coletamos o endereço da proxima para repetir o ciclo quando
+nessecario. assim a vm nuca vai ter que perguntar: esse dado pertence a qual variavel?
+assim nao vamos precisar varrer endereços
+*/
 
 // a satck vai trabalhar como se fosse registradores 
 #define Tstack 16
@@ -89,6 +98,7 @@ uint8_t op() {
 }
 
 void move(uint64_t pos) { // vai ir ate chegar em outra variavel
+    
 
 
 }
@@ -99,39 +109,23 @@ void append(uint64_t enderecoVI, uint8_t dado) { // acresento  o byte x a variav
 
 }
 
-uint16_t getID(uint16_t VI) { // pega o endereço real da variavel
-    VI = VI - 1;
-    uint16_t bytesVI = 0;
-    for (uint8_t i = 0; i < UnitsRAM; i++) {
-        bytesVI = bytesVI <<= 8;
-        bytesVI |= RAM[VI];
-        VI++;
-    }
-    return bytesVI;
-}
-
-uint16_t varID(uint16_t posVar) { // qual endereço é desse dado?
-    for (uint8_t i = 0; i < (pointerVI * 2); i++) {
-        if (getID(i) == posVar) {
-            return posVar;
-        }
-    }
-    return 0;
-}
-
 
 void new() { // cria a variavel
     uint16_t enderecoAtual = pointerVI * 2;
-    if (varID(enderecoAtual) == 0) { // se o proximo byte esta livre
+    // primeiravar é o endereço da primeira variavel
+    if (RAM[enderecoAtual + 2] >= primeiraVar) { // se nao da pra creser (tem dado impedindo tem que mover)
 
+    } else { // so coloca
+        // endereeça a nova variavel no lugar do peso de papel
+        // 2 fase em outra funçao:
+        // coloca os dados da variavel no lugar do peso de papel
+        // atualiza o peso de papel pro ultimo byte dessa var
 
+        RAM[enderecoAtual]     = RAMP >> 8;
+        RAM[enderecoAtual + 1] = RAMP & 0xFF;
+        pointerVI++;
     }
-
-    uint16_t enderecoVIvar = 
-
-    RAM[enderecoAtual]     = RAMP >> 8;
-    RAM[enderecoAtual + 1] = RAMP & 0xFF;
-    pointerVI++;
+    
 }
 
 void store() {
