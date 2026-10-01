@@ -97,35 +97,49 @@ uint8_t op() {
     return opcode;
 }
 
-void move(uint64_t pos) { // vai ir ate chegar em outra variavel
-    
-
-
-}
-
 void append(uint64_t enderecoVI, uint8_t dado) { // acresento  o byte x a variavel
 
 
 
 }
 
+void move(uint16_t EconjuntoVI, uint16_t enderecoDado, uint16_t tamanhoDosDados) { // vai ir ate chegar em outra variavel
+    AtualizaVI(EconjuntoVI, RAMP);
+    for (uint16_t i = 0; i < tamanhoDosDados; i++) {
+        RAM[RAMP] = RAM[enderecoDado + i];
+        RAMP++;
+    }
+}
+
+void AtualizaVI(uint16_t VIconjunto, uint16_t enderecoFisico) {
+    RAM[VIconjunto]     = enderecoFisico >> 8;
+    RAM[VIconjunto + 1] = enderecoFisico & 0xFF;
+}
+
+uint16_t EnderecoDado(uint16_t posVI) {
+    uint16_t enderecoVIC = 0;
+    enderecoVIC = RAM[posVI];
+    enderecoVIC = enderecoVIC << 8;
+    enderecoVIC |= RAM[posVI + 1];
+    return enderecoVIC;
+}
 
 void new() { // cria a variavel
     uint16_t enderecoAtual = pointerVI * 2;
-    // primeiravar é o endereço da primeira variavel
-    if (RAM[enderecoAtual + 2] >= primeiraVar) { // se nao da pra creser (tem dado impedindo tem que mover)
-
+    // primeiravar é o endereço do conjunto VI da primeira variavel
+    // coletar o endereço fisico da primeiraVar
+    uint16_t EV1 = EnderecoDado(primeiraVar); // onde a primeira var começa endereco fisico no array de ram
+    uint16_t EV2 = EnderecoDado(primeiraVar + 2); // vai pro proximo conjunto VI que contem onde a proxima variavel começa
+    if (RAM[enderecoAtual + 2] >= EV1) { // se nao da pra creser (tem dado impedindo tem que mover)
+        move(primeiraVar, EV1, (EV2 - EV1));
     } else { // so coloca
         // endereeça a nova variavel no lugar do peso de papel
         // 2 fase em outra funçao:
         // coloca os dados da variavel no lugar do peso de papel
         // atualiza o peso de papel pro ultimo byte dessa var
-
-        RAM[enderecoAtual]     = RAMP >> 8;
-        RAM[enderecoAtual + 1] = RAMP & 0xFF;
+        AtualizaVI(pointerVI, RAMP);
         pointerVI++;
     }
-    
 }
 
 void store() {
