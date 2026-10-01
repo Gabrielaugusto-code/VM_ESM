@@ -116,7 +116,7 @@ void AtualizaVI(uint16_t VIconjunto, uint16_t enderecoFisico) {
     RAM[VIconjunto + 1] = enderecoFisico & 0xFF;
 }
 
-uint16_t EnderecoDado(uint16_t posVI) {
+uint16_t EnderecoDado(uint16_t posVI) { // constroi o enderco VI de 2bytes em um numero
     uint16_t enderecoVIC = 0;
     enderecoVIC = RAM[posVI];
     enderecoVIC = enderecoVIC << 8;
@@ -126,12 +126,18 @@ uint16_t EnderecoDado(uint16_t posVI) {
 
 void new() { // cria a variavel
     uint16_t enderecoAtual = pointerVI * 2;
+    if ((pointerVI * 2) < 4) {
+        AtualizaVI(pointerVI, RAMP);
+        pointerVI++;
+        return;
+    }
     // primeiravar é o endereço do conjunto VI da primeira variavel
     // coletar o endereço fisico da primeiraVar
     uint16_t EV1 = EnderecoDado(primeiraVar); // onde a primeira var começa endereco fisico no array de ram
     uint16_t EV2 = EnderecoDado(primeiraVar + 2); // vai pro proximo conjunto VI que contem onde a proxima variavel começa
-    if (RAM[enderecoAtual + 2] >= EV1) { // se nao da pra creser (tem dado impedindo tem que mover)
+    if ((enderecoAtual + 2) >= EV1) { // se nao da pra creser (tem dado impedindo tem que mover)
         move(primeiraVar, EV1, (EV2 - EV1));
+        primeiraVar = primeiraVar + 2; // atualiza a qual e´ a primeira variavel
     } else { // so coloca
         // endereeça a nova variavel no lugar do peso de papel
         // 2 fase em outra funçao:
